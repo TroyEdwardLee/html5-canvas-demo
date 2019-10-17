@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- HTML5 canvas 绘制的文字如何换行 https://blog.csdn.net/m8705/article/details/52995099 -->
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, minimal-ui:ios">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Flow</title>
+  <link rel="stylesheet" href="">
+  <script src="./moment-with-locales.min.js"></script>
+  <style>
+    .canvas-container {
+      height: 300px;
+      border: none;
+      margin: 0 auto;
+    }
+
+    .node-flow {
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-container" class="canvas-container">
+    <canvas id="node-flow" class="node-flow" height="300"></canvas>
+  </div>
+  <script>
+    let aJSONData = [{
+      key: "P1",
+      name: "Node01",
+      count: 120,
+      warning: false
+    }, {
+      key: "P2",
+      name: "Node02",
+      warning: false
+    }, {
+      key: "P3",
+      name: "Node03",
+      warning: true
+    }, {
+      key: "P4",
+      name: "Node04",
+      warning: false
+    }, {
+      key: "P5",
+      name: "Node05",
+      count: 1200,
+      warning: true
+    }, {
+      key: "P6",
+      name: "Node06",
+      warning: false
+    }, {
+      key: "P7",
+      name: "Node07",
+      count: 120011,
+      warning: true
+    }, {
+      key: "P8",
+      name: "Node08",
+      warning: false
+    }, {
+      key: "P9",
+      name: "Node09",
+      warning: false
+    }, {
+      key: "P10",
+      name: "Node10",
+      warning: true
+    }, {
+      key: "P11",
+      name: "Node11",
+      warning: false
+    }, {
+      key: "P12",
+      name: "Node12",
+      warning: false
+    }, {
+      key: "P13",
+      name: "Node13",
+      warning: false
+    }, {
+      key: "P14",
+      name: "Node14",
+      warning: true,
+      bMark: true
+    }, {
+      key: "P15",
+      name: "Node15",
+      warning: false
+    }, {
+      key: "P16",
+      name: "Node16",
+      warning: false
+    }, {
+      key: "P17",
+      name: "Node17",
+      warning: false
+    }, {
+      key: "P18",
+      name: "Node18",
+      warning: false
+    }, {
+      key: "P19",
+      name: "Node19",
+      warning: false
+    }, {
+      key: "P20",
+      name: "Node20",
+      warning: false
+    }, {
+      key: "P21",
+      name: "Node21",
+      warning: false
+    }];
+    let oCanvas = document.getElementById("node-flow"),
+      ctx = oCanvas.getContext("2d");
+
+    function initCanvasWidth() {
+      let iFloor = Math.floor(aJSONData.length / 2);
+      let iWidth = 0;
+      aJSONData.map(function (obj, idx) {
+        if (idx < iFloor) {
+          iWidth = iWidth + 136;
+        }
+      });
+      return iWidth;
+    }
+
+    function ballType() {
+      let aBall = [];
+      let iFloor = Math.floor(aJSONData.length / 2);
+      let iX = 120;
+      let iX1 = iFloor * 120;
+      let iY = 80;
+      aJSONData.map(function (obj, idx) {
+        if (idx > 0 && idx < iFloor) {
+          iX = iX + 120;
+        }
+        if (idx === iFloor) {
+          iX = iX + 70;
+          iY = iY + 70;
+        }
+        if (idx > iFloor + 1) {
+          iX1 = iX1 - 120;
+        }
+        let ball = {
+          X: idx <= iFloor ? iX : iX1,
+          Y: idx > iFloor ? 220 : iY,
+          R: 13,
+          sKey: obj.key,
+          sName: obj.name,
+          iCount: obj["count"] ? obj["count"] : null,
+          bFlag: obj["warning"] ? obj["warning"] : false,
+          isLocation: obj["bMark"] ? obj["bMark"] : false
+        }
+        aBall.push(ball);
+      });
+      return aBall;
+    }
+
+    function drawStraightLine(obj, idx) {
+      let iFloor = Math.floor(aJSONData.length / 2);
+      let aNode = ballType();
+      ctx.beginPath();
+      if (idx !== iFloor) {
+        ctx.moveTo(obj.X - 13 - 94, obj.Y);
+        ctx.lineTo(obj.X - 13, obj.Y);
+      } else {
+        ctx.moveTo(aNode[idx - 1].X + 13, aNode[idx - 1].Y);
+        ctx.quadraticCurveTo(obj.X, aNode[idx - 1].Y, obj.X, obj.Y - 13);
+        ctx.moveTo(aNode[idx + 1].X + 13, aNode[idx + 1].Y);
+        ctx.quadraticCurveTo(obj.X, aNode[idx + 1].Y, obj.X, obj.Y + 13);
+      }
+      ctx.strokeStyle = "#333";
+      ctx.stroke();
+      ctx.closePath();
+    }
+
+    function drawBall(obj, idx) {
+      ctx.font = "14px Arial";
+      let iFloor = Math.floor(aJSONData.length / 2);
+      let iLabelY = obj.Y - 24,
+        iLabelX = obj.X - ctx.measureText(obj.sName).width / 2;
+      if (idx > iFloor) {
+        iLabelY = obj.Y + 32;
+      }
+      if (idx === iFloor) {
+        iLabelX = obj.X + ctx.measureText(obj.sName).width / 2.8
+        iLabelY = obj.Y + 4;
+      }
+      ctx.beginPath();
+      ctx.fillStyle = "#333";
+      ctx.fillText(obj.sName, iLabelX, iLabelY);
+      if (obj.iCount) {
+        ctx.font = "12px Arial";
+        if (ctx.ellipse) {
+          //绘制并填充一个圆角矩形  
+          fillRoundRect(ctx, obj.X - ctx.measureText(obj.iCount).width * 1.25 / 2, obj.Y + 16,
+            ctx.measureText(obj.iCount).width * 1.25, 20, 10, '#0078db');
+          ctx.fillStyle = "#fff";
+          ctx.fillText(obj.iCount, obj.X - ctx.measureText(obj.iCount).width / 2, obj.Y + 29.75);
+        }
+      }
+      ctx.closePath();
+      ctx.beginPath();
+      if (!obj.bFlag) {
+        ctx.strokeStyle = "#333";
+        ctx.arc(obj.X, obj.Y, obj.R, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else {
+        ctx.arc(obj.X, obj.Y, obj.R, 0, 2 * Math.PI);
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "#fd5151";
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.font = "17px Georgia";
+        ctx.fillStyle = "#fff";
+        ctx.fillText("!", obj.X - 3, obj.Y + 5.6);
+      }
+      ctx.closePath();
+    }
+
+    function drawLineAndBall() {
+      let aBall = ballType();
+      aBall.map(function (obj, idx) {
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = null;
+        drawStraightLine(obj, idx);
+        if (obj["isLocation"]) {
+          drawLocationIcon(obj, idx);
+        }
+        drawBall(obj, idx);
+      });
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, oCanvas.width, oCanvas.height);
+    }
+
+    /**该方法用来绘制一个有填充色的圆角矩形 https://blog.csdn.net/xutongbao/article/details/82786929
+     *@param ctx:canvas的上下文环境 
+     *@param x:左上角x轴坐标 
+     *@param y:左上角y轴坐标 
+     *@param width:矩形的宽度 
+     *@param height:矩形的高度 
+     *@param radius:圆的半径 
+     *@param fillColor:填充颜色 
+     **/
+    function fillRoundRect(ctx, x, y, width, height, radius, /*optional*/
+      fillColor) {
+      //圆的直径必然要小于矩形的宽高          
+      if (2 * radius > width || 2 * radius > height) {
+        return false;
+      }
+      ctx.save();
+      ctx.translate(x, y);
+      //绘制圆角矩形的各个边  
+      drawRoundRectPath(ctx, width, height, radius);
+      ctx.fillStyle = fillColor || "#000"; //若是给定了值就用给定的值否则给予默认值  
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawRoundRectPath(ctx, width, height, radius) {
+      ctx.beginPath(0);
+      //从右下角顺时针绘制，弧度从0到1/2PI  
+      ctx.arc(width - radius, height - radius, radius, 0, Math.PI / 2);
+      //矩形下边线  
+      ctx.lineTo(radius, height);
+      //左下角圆弧，弧度从1/2PI到PI  
+      ctx.arc(radius, height - radius, radius, Math.PI / 2, Math.PI);
+      //矩形左边线  
+      ctx.lineTo(0, radius);
+      //左上角圆弧，弧度从PI到3/2PI  
+      ctx.arc(radius, radius, radius, Math.PI, Math.PI * 3 / 2);
+      //上边线  
+      ctx.lineTo(width - radius, 0);
+      //右上角圆弧  
+      ctx.arc(width - radius, radius, radius, Math.PI * 3 / 2, Math.PI * 2);
+      //右边线  
+      ctx.lineTo(width, height - radius);
+      ctx.closePath();
+    }
+
+    function drawLocationIcon(obj, idx) {
+      let iFloor = Math.floor(aJSONData.length / 2);
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = null;
+      ctx.strokeStyle = "#0078db";
+      if (idx > iFloor) {
+        ctx.beginPath();
+        ctx.arc(obj.X, obj.Y - 36, 8, 1 * Math.PI, 0);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.beginPath();
+        ctx.arc(obj.X, obj.Y - 36, 3.6, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.beginPath();
+        ctx.moveTo(obj.X, obj.Y - 21);
+        ctx.lineTo(obj.X - 8, obj.Y - 36);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.beginPath();
+        ctx.moveTo(obj.X, obj.Y - 21);
+        ctx.lineTo(obj.X + 8, obj.Y - 36);
+        ctx.stroke();
+        ctx.closePath();
+      }
+    }
+
+    (function () {
+      document.getElementById("canvas-container").style.width = initCanvasWidth() + "px";
+      oCanvas.width = initCanvasWidth();
+      drawLineAndBall();
+      oCanvas.addEventListener("click", function (event) {
+        let bClickBall = false;
+        let iClickBlankCount = 0;
+        let aBall = ballType();
+        // let x = event.pageX - oCanvas.getBoundingClientRect().left,
+        //   y = event.pageY - oCanvas.getBoundingClientRect().top;
+        let x = event.offsetX,
+          y = event.offsetY;
+        clearCanvas();
+        aBall.map(function (obj, idx) {
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = null;
+          drawStraightLine(obj, idx);
+          if (obj["isLocation"]) {
+            drawLocationIcon(obj, idx);
+          }
+          drawBall(obj, idx);
+          if (ctx.isPointInPath(x, y)) {
+            bClickBall = true;
+            ctx.beginPath();
+            ctx.arc(obj.X, obj.Y, obj.R, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#0078db";
+            ctx.fillStyle = "#0078db";
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = "#0078db";
+            ctx.fill();
+            ctx.closePath();
+            ctx.beginPath();
+            ctx.arc(obj.X, obj.Y, obj.R - 2.5, 0, 2 * Math.PI);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
+            if (obj.bFlag) {
+              ctx.font = "17px Georgia";
+              ctx.fillStyle = "#fd5151";
+              ctx.fillText("!", obj.X - 3, obj.Y + 5.6);
+            }
+            ctx.closePath();
+          } else if (!ctx.isPointInPath(x, y) && !bClickBall && !iClickBlankCount) {
+            iClickBlankCount++;
+            return;
+          }
+        });
+      });
+    })()
+  </script>
+</body>
+
+</html>
